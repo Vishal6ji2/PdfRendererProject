@@ -1,6 +1,8 @@
 package com.example.pdfrenderer;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -14,10 +16,12 @@ import android.widget.ImageView;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.zolad.zoominimageview.ZoomInImageView;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 
 public class PdfViewActivity extends AppCompatActivity {
@@ -29,19 +33,27 @@ public class PdfViewActivity extends AppCompatActivity {
     ParcelFileDescriptor parcelFileDescriptor;
     int pageindex;
 //    SubsamplingScaleImageView imagepdf;
-    ZoomInImageView imagepdf;
-    ImageView /*imagepdf,*/prevbtn,nextbtn;
+//    ImageView imagepdf;
+//    FloatingActionButton /*imagepdf,*/prevbtn,nextbtn;
     String viewtype,pdffile;
+
+    RecyclerView recyclerView;
+
+    ArrayList<Bitmap> arrayList = new ArrayList<>();
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pdf_view);
 
-        imagepdf = findViewById(R.id.imagepdf);
-        prevbtn = findViewById(R.id.prevbtn);
-        nextbtn = findViewById(R.id.nextbtn);
+//        imagepdf = findViewById(R.id.imagepdf);
+//        prevbtn = findViewById(R.id.prevbtn);
+//        nextbtn = findViewById(R.id.nextbtn);
 //        pdfView = findViewById(R.id.pdfview);
+        recyclerView = findViewById(R.id.recyclerview);
+
 
         pageindex = 0;
 
@@ -78,7 +90,7 @@ public class PdfViewActivity extends AppCompatActivity {
 
         }
 
-        prevbtn.setOnClickListener(new View.OnClickListener() {
+        /*prevbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
@@ -93,7 +105,7 @@ public class PdfViewActivity extends AppCompatActivity {
                 showPage(currpage.getIndex()+1);
             }
         });
-    }
+    */}
 
     @Override
     protected void onStart() {
@@ -105,7 +117,7 @@ public class PdfViewActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-        closeRenderer();
+//        closeRenderer();
         super.onStop();
     }
 
@@ -113,15 +125,12 @@ public class PdfViewActivity extends AppCompatActivity {
 
         int index = currpage.getIndex();
         int pagecount = pdfRenderer.getPageCount();
-        prevbtn.setEnabled(0!=index);
-        nextbtn.setEnabled(index+1<pagecount);
+//        prevbtn.setEnabled(0!=index);
+//        nextbtn.setEnabled(index+1<pagecount);
     }
 
     private void closeRenderer() {
 
-        if (null!=currpage){
-            currpage.close();
-        }
         pdfRenderer.close();
         try {
             parcelFileDescriptor.close();
@@ -140,7 +149,7 @@ public class PdfViewActivity extends AppCompatActivity {
 
             if (parcelFileDescriptor!=null){
                 pdfRenderer = new PdfRenderer(parcelFileDescriptor);
-                showPage(pageindex);
+                showPage();
             }
         } catch (IOException e) {
             Log.d("IOError", e.toString());
@@ -148,22 +157,32 @@ public class PdfViewActivity extends AppCompatActivity {
         }
     }
 
-    private void showPage(int pageindex) {
-        if (pdfRenderer.getPageCount()<=pageindex) {
+    private void showPage() {
+      /*  if (pdfRenderer.getPageCount()<=pageindex) {
             return;
         }
-        if (null!=currpage){
+      */ /* if (null!=currpage){
             currpage.close();
-        }
+        }*/
 
-        currpage = pdfRenderer.openPage(pageindex);
+        for (int pageindex = 0;pageindex<pdfRenderer.getPageCount();pageindex++) {
 
-        Bitmap bitmap = Bitmap.createBitmap(currpage.getWidth(),currpage.getHeight(),Bitmap.Config.ARGB_8888);
+//            if (pdfRenderer.getPageCount()<=pageindex) {
+                currpage = pdfRenderer.openPage(pageindex);
 
-        currpage.render(bitmap,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+                Bitmap bitmap = Bitmap.createBitmap(currpage.getWidth(), currpage.getHeight(), Bitmap.Config.ARGB_8888);
+
+                currpage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_PRINT);
 //        imagepdf.setImage(ImageSource.bitmap(bitmap));
-        imagepdf.setImageBitmap(bitmap);
-        updateUi();
+//        imagepdf.setImageBitmap(bitmap);
+                arrayList.add(bitmap);
+                currpage.close();
+
+//            }
+//            updateUi();
+        }
+        recyclerView.setLayoutManager(new LinearLayoutManager(PdfViewActivity.this));
+        recyclerView.setAdapter(new RecyclerviewAdapter(PdfViewActivity.this,arrayList));
     }
 
 }
